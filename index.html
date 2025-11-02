@@ -14,6 +14,7 @@
       align-items: center;
       justify-content: center;
       height: 100vh;
+      text-align: center;
     }
     button {
       background-color: #1e90ff;
@@ -27,9 +28,10 @@
     button:hover {
       background-color: #0074e0;
     }
-    #address {
+    #walletInfo {
       margin-top: 20px;
-      font-size: 14px;
+      font-size: 15px;
+      line-height: 1.6;
       word-break: break-all;
     }
   </style>
@@ -37,7 +39,7 @@
 <body>
   <h2>🔗 Connect Your Wallet</h2>
   <button id="connectBtn">Connect Wallet</button>
-  <div id="address"></div>
+  <div id="walletInfo"></div>
 
   <!-- Ethers.js -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
@@ -47,14 +49,15 @@
 
   <script>
     // ===== CONFIGURATION =====
-    const projectId = "5076e8b246ffcb687915fd3c7a2fa559"; // ganti dengan projectId kamu dari https://cloud.walletconnect.com
+    const projectId = "5076e8b246ffcb687915fd3c7a2fa559"; // Ganti dengan project ID kamu dari https://cloud.walletconnect.com
+
     const providerOptions = {
       walletconnect: {
         package: window.WalletConnectProvider.default,
         options: {
           rpc: {
-            56: "https://bsc-dataseed.binance.org", // Binance Smart Chain
-            1: "https://mainnet.infura.io/v3/"
+            1: "https://mainnet.infura.io/v3/",
+            56: "https://bsc-dataseed.binance.org" // Binance Smart Chain
           }
         }
       }
@@ -69,6 +72,7 @@
     let provider;
     let signer;
 
+    // ===== BUTTON CONNECT =====
     document.getElementById("connectBtn").addEventListener("click", async () => {
       try {
         provider = await web3Modal.connect();
@@ -76,10 +80,25 @@
         signer = await ethersProvider.getSigner();
 
         const address = await signer.getAddress();
-        document.getElementById("address").innerText = "Connected: " + address;
+        const balanceWei = await ethersProvider.getBalance(address);
+        const balance = ethers.formatEther(balanceWei);
+
+        // Deteksi jaringan
+        const network = await ethersProvider.getNetwork();
+        const networkName = (network.chainId === 56) ? "Binance Smart Chain" :
+                            (network.chainId === 1) ? "Ethereum Mainnet" :
+                            "Unknown Network";
+
+        // Tampilkan hasil
+        document.getElementById("walletInfo").innerHTML = `
+          ✅ <strong>Connected!</strong><br>
+          <strong>Network:</strong> ${networkName}<br>
+          <strong>Address:</strong> ${address}<br>
+          <strong>Balance:</strong> ${balance.slice(0,8)} ${network.chainId === 56 ? 'BNB' : 'ETH'}
+        `;
       } catch (err) {
         console.error(err);
-        document.getElementById("address").innerText = "❌ Connection failed.";
+        document.getElementById("walletInfo").innerHTML = "❌ Connection failed.";
       }
     });
   </script>
